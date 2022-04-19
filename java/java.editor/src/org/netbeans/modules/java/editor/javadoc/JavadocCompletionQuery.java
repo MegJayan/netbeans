@@ -251,7 +251,7 @@ final class JavadocCompletionQuery extends AsyncCompletionQuery{
         if (docCommentTree == null) {
             return false;
         }
-        jdctx.comment = docCommentTree;
+        jdctx.comment = docCommentTree;      
         Element elm = trees.getElement(javadocFor);
         if (elm == null) {
             return false;
@@ -283,7 +283,6 @@ final class JavadocCompletionQuery extends AsyncCompletionQuery{
             // if position in token == 0 resolve CC according to previous token
             jdts.movePrevious();
         }
-        
         switch (jdts.token().id()) {
             case TAG:
                 resolveTagToken(jdctx);
@@ -309,7 +308,6 @@ final class JavadocCompletionQuery extends AsyncCompletionQuery{
     void resolveTagToken(JavadocContext jdctx) {
         assert jdctx.jdts.token() != null;
         assert jdctx.jdts.token().id() == JavadocTokenId.TAG;
-
         DocTreePath tag = getTag(jdctx, caretOffset);
         if (tag == null) {
             // eg * description @
@@ -426,7 +424,6 @@ final class JavadocCompletionQuery extends AsyncCompletionQuery{
     void resolveDotToken(JavadocContext jdctx) {
         assert jdctx.jdts.token() != null;
         assert jdctx.jdts.token().id() == JavadocTokenId.DOT;
-
         DocTreePath tag = getTag(jdctx, caretOffset);
         if (tag != null) {
             insideTag(tag, jdctx);
@@ -436,7 +433,6 @@ final class JavadocCompletionQuery extends AsyncCompletionQuery{
     void resolveHashToken(JavadocContext jdctx) {
         assert jdctx.jdts.token() != null;
         assert jdctx.jdts.token().id() == JavadocTokenId.HASH;
-
         DocTreePath tag = getTag(jdctx, caretOffset);
         if (tag != null) {
             insideTag(tag, jdctx);
@@ -1372,6 +1368,7 @@ final class JavadocCompletionQuery extends AsyncCompletionQuery{
         CharSequence text = token.text();
         int pos = caretOffset - jdts.offset();
         DocTreePath tag = getTag(jdctx, caretOffset);
+        insideInlineSnippet(jdctx, tag);
         if (pos > 0 && pos <= text.length() && text.charAt(pos - 1) == '{') {
             if (tag != null && !JavadocCompletionUtils.isBlockTag(tag)) {
                 int start = (int) jdctx.positions.getStartPosition(jdctx.javac.getCompilationUnit(), jdctx.comment, tag.getLeaf());
@@ -1392,7 +1389,42 @@ final class JavadocCompletionQuery extends AsyncCompletionQuery{
             resolveBlockTag(null, jdctx);
         }
     }
-    
+
+    private void insideInlineSnippet(JavadocContext jdctx, DocTreePath tag) {
+        int start = (int) jdctx.positions.getStartPosition(jdctx.javac.getCompilationUnit(), jdctx.comment, tag.getLeaf());
+        String subStr = JavadocCompletionUtils.getCharSequence(jdctx.doc, start, caretOffset).toString();
+        if(subStr.endsWith("//@")) {
+            List<String> inlineAttr =new ArrayList() {{
+            add("highlight");
+            add("replace");
+            add("link");
+            }};
+            for(String str: inlineAttr) {
+                items.add(JavadocCompletionItem.createNameItem(str, this.caretOffset));
+            }
+        } else {
+            String str = subStr.substring(subStr.lastIndexOf("@"), caretOffset-start).trim();
+            if(str!=null) {
+                completeInlineMarkupTag(str, new ArrayList(){{add("substring");add("regex");add("region");}});
+            }
+        }
+    }
+
+    private void completeInlineMarkupTag(String str, List<String> attr) {
+        String value = " = \"<value>\"";
+        switch(str) {
+            case "@highlight": attr.add("type"); break;
+            case "@replace":attr.add("replacement");break;
+            case "@link":attr.add("target"); attr.add("type"); break;
+            default: break;
+        }
+        if(attr.size()>3) {
+            for(String entry:attr) {
+                items.add(JavadocCompletionItem.createNameItem(entry+value, this.caretOffset));
+            }
+        }
+    }
+
     static final class JavadocContext {
         int anchorOffset = -1;
         ElementHandle<Element> handle;
