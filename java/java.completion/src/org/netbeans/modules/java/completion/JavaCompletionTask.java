@@ -126,6 +126,10 @@ public final class JavaCompletionTask<T> extends BaseTask {
         T createModuleItem(String moduleName, int substitutionOffset);
     }
 
+    public static interface RecordPatternItemFactory<T> extends ItemFactory<T> {
+        T createRecordPatternItem(CompilationInfo info, TypeElement elem, DeclaredType type, int substitutionOffset, ReferencesCount referencesCount, boolean isDeprecated, boolean insideNew, boolean addTypeVars, boolean addSimpleName, boolean smartType, boolean autoImportEnclosingType);
+    }
+
     public static enum Options {
 
         ALL_COMPLETION,
@@ -488,6 +492,20 @@ public final class JavaCompletionTask<T> extends BaseTask {
                 localResult(env);
                 addKeywordsForBlock(env);
                 break;
+            default:
+                inDeconstructionRecordPattern(env);
+                break;
+        }
+    }
+
+    private void inDeconstructionRecordPattern(final Env env) throws java.io.IOException {
+        final CompilationController controller = env.getController();
+        final Elements elements = controller.getElements();
+        TreePath path = env.getPath();
+        TypeMirror tm = controller.getTreeUtilities().parseType(env.getPrefix(), env.getScope().getEnclosingClass());
+        TypeElement e = (TypeElement) ((DeclaredType) tm).asElement();
+        if (e.getSimpleName().toString().contentEquals(env.getPrefix()) && (e.getKind().equals(ElementKind.RECORD))) {
+            results.add(((RecordPatternItemFactory<T>) itemFactory).createRecordPatternItem(env.getController(), e, (DeclaredType) e.asType(), anchorOffset, null, elements.isDeprecated(e), env.isInsideNew(), env.isInsideNew() || env.isInsideClass(), false, false, false));
         }
     }
 
@@ -4160,7 +4178,15 @@ public final class JavaCompletionTask<T> extends BaseTask {
             }
         };
         for (TypeElement e : controller.getElementUtilities().getGlobalTypes(acceptor)) {
-            results.add(itemFactory.createTypeItem(env.getController(), e, (DeclaredType) e.asType(), anchorOffset, null, elements.isDeprecated(e), env.isInsideNew(), env.isInsideNew() || env.isInsideClass(), false, false, false));
+            if (env.getPrefix() != null && e.getSimpleName().toString().contentEquals(env.getPrefix()) && (e.getKind().equals(ElementKind.RECORD))) {
+                InstanceOfTree iot = (InstanceOfTree) env.getPath().getLeaf();
+                TokenSequence<JavaTokenId> ts = findLastNonWhitespaceToken(env, iot, env.getOffset());
+                if (ts != null && ts.token().id() == JavaTokenId.INSTANCEOF) {
+                    results.add(((RecordPatternItemFactory<T>) itemFactory).createRecordPatternItem(env.getController(), e, (DeclaredType) e.asType(), anchorOffset, null, elements.isDeprecated(e), env.isInsideNew(), env.isInsideNew() || env.isInsideClass(), false, false, false));
+                }
+            } else {
+                results.add(itemFactory.createTypeItem(env.getController(), e, (DeclaredType) e.asType(), anchorOffset, null, elements.isDeprecated(e), env.isInsideNew(), env.isInsideNew() || env.isInsideClass(), false, false, false));
+            }
         }
     }
 

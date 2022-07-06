@@ -48,7 +48,8 @@ import org.openide.filesystems.FileObject;
  */
 public final class JavaCompletionItemFactory implements JavaCompletionTask.TypeCastableItemFactory<JavaCompletionItem>,
         JavaCompletionTask.LambdaItemFactory<JavaCompletionItem>,
-        JavaCompletionTask.ModuleItemFactory<JavaCompletionItem> {
+        JavaCompletionTask.ModuleItemFactory<JavaCompletionItem>,
+        JavaCompletionTask.RecordPatternItemFactory<JavaCompletionItem> {
 
     private final WhiteListQuery.WhiteList whiteList;
 
@@ -179,5 +180,10 @@ public final class JavaCompletionItemFactory implements JavaCompletionTask.TypeC
     @Override
     public JavaCompletionItem createLambdaItem(CompilationInfo info, TypeElement elem, DeclaredType type, int substitutionOffset, boolean addSemicolon) {
         return JavaCompletionItem.createLambdaItem(info, elem, type, substitutionOffset, addSemicolon);
+    }
+
+    @Override
+    public JavaCompletionItem createRecordPatternItem(CompilationInfo info, TypeElement elem, DeclaredType type, int substitutionOffset, ReferencesCount referencesCount, boolean isDeprecated, boolean insideNew, boolean addTypeVars, boolean addSimpleName, boolean smartType, boolean autoImportEnclosingType) {
+        return JavaCompletionItem.createRecordPatternItem(info, elem, type, substitutionOffset, referencesCount, isDeprecated, insideNew, addTypeVars, addSimpleName, smartType, autoImportEnclosingType, whiteList);
     }
 }
