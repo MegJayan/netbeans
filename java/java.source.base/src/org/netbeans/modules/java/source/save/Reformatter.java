@@ -55,6 +55,7 @@ import org.netbeans.modules.editor.indent.spi.ExtraLock;
 import org.netbeans.modules.editor.indent.spi.ReformatTask;
 import org.netbeans.modules.java.source.JavaSourceAccessor;
 import org.netbeans.modules.java.source.NoJavacHelper;
+import org.netbeans.modules.java.source.TreeShims;
 import org.netbeans.modules.java.source.parsing.FileObjects;
 import org.netbeans.modules.java.source.parsing.JavacParser;
 import org.netbeans.modules.parsing.api.Embedding;
@@ -584,9 +585,11 @@ public class Reformatter implements ReformatTask {
                     return true;
 
                 Boolean ret;
-
-                ret = super.scan(tree, p);
-
+                if (tree != null && tree.getKind().toString().equals(TreeShims.PATTERN_CASE_LABEL)) {
+                    ret = scanPatternCaseLabel(tree, p);
+                } else {
+                    ret = super.scan(tree, p);
+                }
                 return ret != null ? ret : true;
             }
             finally {
@@ -2800,14 +2803,25 @@ public class Reformatter implements ReformatTask {
             return true;
         }
 
-        @Override
-        public Boolean visitGuardedPattern(GuardedPatternTree node, Void p) {
-            scan(node.getPattern(), p);
-            space();
-            accept(AMPAMP);
-            space();
-            scan(node.getExpression(), p);
+        public Boolean scanPatternCaseLabel(Tree node, Void p) {
+            try {
+                Tree gpt = TreeShims.getGuardedPattern(node);
+                if (gpt != null) {
+                    scan(gpt, p);
+                    //removeWhiteSpace(IDENTIFIER);
+                    space();
+                }
+            } catch (RuntimeException ex) {
+                return false;
+            }
 
+            ExpressionTree exprTree = TreeShims.getGuardedExpression(node);
+            if (exprTree != null) {
+                accept(IDENTIFIER);
+                //removeWhiteSpace(IDENTIFIER);
+                space();
+                scan(exprTree, p);
+            }
             return true;
         }
 
@@ -2948,7 +2962,6 @@ public class Reformatter implements ReformatTask {
                                 break;
                             case BINDING_PATTERN:
                             case PARENTHESIZED_PATTERN:
-                            case GUARDED_PATTERN:
                                 removeWhiteSpace(JavaTokenId.IDENTIFIER);
                                 scan(label, p);
                                 break;

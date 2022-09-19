@@ -2835,7 +2835,7 @@ public class FormatingTest extends NbTestCase {
 
     public void testSwitchCaseGuardedPattern() throws Exception {
         try {
-            SourceVersion.valueOf("RELEASE_17"); //NOI18N
+            SourceVersion.valueOf("RELEASE_19"); //NOI18N
         } catch (IllegalArgumentException ex) {
             //OK, no RELEASE_17, skip test
             return;
@@ -2853,7 +2853,7 @@ public class FormatingTest extends NbTestCase {
                 + "        Object str = \"pattern matching switch\";\n"
                 + "        switch (str) {\n"
                 + "case \n"
-                + "      String       s &&       s.length() == 1\n"
+                + "      String       s when       s.length() == 1\n"
                 + "                    \n"
                 + "                    ->\n"
                 + "                System.out.println(\"case with guarded pattern formatting\");\n"
@@ -2871,7 +2871,7 @@ public class FormatingTest extends NbTestCase {
                 + "    void testSwitchCaseGuardedPattern() {\n"
                 + "        Object str = \"pattern matching switch\";\n"
                 + "        switch (str) {\n"
-                + "            case String s && s.length() == 1 ->\n"
+                + "            case String s when s.length() == 1 ->\n"
                 + "                System.out.println(\"case with guarded pattern formatting\");\n"
                 + "            default ->\n"
                 + "                System.out.println(\"default formatting\");\n"
@@ -2903,7 +2903,7 @@ public class FormatingTest extends NbTestCase {
                 + "        switch (str) {\n"
                 + "case            \n"
                 + "                    null,\n"
-                + "      String       s &&       s.length() == 1\n"
+                + "      String       s when       s.length() == 1\n"
                 + "                    \n"
                 + "                    ->\n"
                 + "                System.out.println(\"case with null and guarded pattern formatting\");\n"
@@ -2921,7 +2921,7 @@ public class FormatingTest extends NbTestCase {
                 + "    void testSwitchCaseNullAndGuardedPattern() {\n"
                 + "        Object str = \"pattern matching switch\";\n"
                 + "        switch (str) {\n"
-                + "            case null, String s && s.length() == 1 ->\n"
+                + "            case null, String s when s.length() == 1 ->\n"
                 + "                System.out.println(\"case with null and guarded pattern formatting\");\n"
                 + "            default ->\n"
                 + "                System.out.println(\"default formatting\");\n"
